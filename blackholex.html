@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BlackHoleX</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#e0e8ff;font-family:'Segoe UI',sans-serif;overflow:hidden;width:100vw;height:100vh}
+canvas{display:block;position:absolute;top:0;left:0;width:100%;height:100%}
+#ui{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+#topbar{position:absolute;top:0;left:0;right:0;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;background:linear-gradient(180deg,rgba(0,0,0,.85)0%,transparent 100%);pointer-events:all}
+#logo{font-size:22px;font-weight:700;letter-spacing:3px;color:#fff;text-shadow:0 0 20px #6af}
+#logo span{color:#4af}
+#modetabs{display:flex;gap:6px}
+.tab{padding:6px 14px;border:1px solid rgba(100,180,255,.3);border-radius:20px;font-size:12px;cursor:pointer;background:rgba(0,20,40,.7);color:#8bc;transition:all .2s}
+.tab:hover,.tab.active{background:rgba(30,80,160,.7);border-color:#4af;color:#fff}
+#panel{position:absolute;right:0;top:50px;bottom:0;width:300px;background:rgba(0,8,20,.92);border-left:1px solid rgba(100,180,255,.2);overflow-y:auto;pointer-events:all;transition:transform .3s}
+#panel.hidden{transform:translateX(300px)}
+.panel-section{padding:14px 16px;border-bottom:1px solid rgba(100,180,255,.12)}
+.panel-title{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#4af;margin-bottom:10px;font-weight:600}
+.slider-row{margin:8px 0}
+.slider-label{display:flex;justify-content:space-between;font-size:12px;color:#8bc;margin-bottom:4px}
+.slider-val{color:#fff;font-weight:600}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:rgba(100,180,255,.2);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#4af;cursor:pointer;box-shadow:0 0 6px #4af}
+.btn{width:100%;padding:8px;margin:4px 0;border:1px solid rgba(100,180,255,.3);border-radius:8px;background:rgba(20,50,100,.5);color:#8bc;font-size:12px;cursor:pointer;text-align:left;transition:all .2s}
+.btn:hover{background:rgba(40,100,200,.5);border-color:#4af;color:#fff}
+.btn.active{background:rgba(40,120,220,.6);border-color:#6cf;color:#fff}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.preset{padding:8px;border:1px solid rgba(100,180,255,.2);border-radius:6px;background:rgba(10,30,60,.6);color:#7ab;font-size:11px;cursor:pointer;text-align:center;transition:all .2s}
+.preset:hover{background:rgba(30,80,160,.6);border-color:#4af;color:#fff}
+#infopanel{position:absolute;bottom:20px;left:20px;width:260px;background:rgba(0,8,20,.88);border:1px solid rgba(100,180,255,.2);border-radius:10px;padding:14px;pointer-events:all}
+.info-metric{display:flex;justify-content:space-between;margin:4px 0;font-size:12px}
+.info-key{color:#6a8fb5}
+.info-val{color:#4df;font-weight:600}
+#tooltip{position:absolute;background:rgba(0,10,30,.9);border:1px solid rgba(100,180,255,.3);border-radius:8px;padding:8px 12px;font-size:12px;color:#cde;max-width:220px;pointer-events:none;display:none;z-index:20}
+#theorylab{position:absolute;top:50px;left:0;right:300px;bottom:0;pointer-events:none;display:none}
+#theorylab.visible{display:block}
+#theorycards{position:absolute;bottom:20px;left:20px;right:20px;display:flex;gap:10px;overflow-x:auto;pointer-events:all;padding-bottom:4px}
+.tcard{min-width:180px;background:rgba(0,8,25,.9);border:1px solid rgba(100,180,255,.25);border-radius:10px;padding:12px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.tcard:hover,.tcard.active{border-color:#4af;background:rgba(10,40,100,.8)}
+.tcard-title{font-size:12px;font-weight:600;color:#6cf;margin-bottom:4px}
+.tcard-tag{font-size:10px;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:6px}
+.tag-confirmed{background:rgba(0,180,100,.2);color:#0f6;border:1px solid rgba(0,200,100,.3)}
+.tag-speculative{background:rgba(200,100,0,.2);color:#fa0;border:1px solid rgba(220,140,0,.3)}
+.tag-unresolved{background:rgba(180,0,180,.2);color:#f8f;border:1px solid rgba(200,0,200,.3)}
+.tcard-desc{font-size:11px;color:#789;line-height:1.4}
+#learnmode{position:absolute;top:50px;left:0;right:300px;bottom:0;overflow-y:auto;pointer-events:all;display:none;background:rgba(0,5,15,.95);padding:30px}
+#learnmode.visible{display:block}
+.lesson{max-width:680px;margin:0 auto}
+.lesson h2{font-size:22px;color:#4af;margin-bottom:12px}
+.lesson p{color:#8bc;line-height:1.7;margin-bottom:12px;font-size:14px}
+.lesson .highlight{background:rgba(0,100,200,.15);border-left:3px solid #4af;padding:10px 14px;border-radius:0 8px 8px 0;margin:12px 0}
+.lessonlist{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.lessonbtn{padding:8px 16px;border:1px solid rgba(100,180,255,.3);border-radius:20px;background:rgba(20,50,100,.5);color:#8bc;font-size:13px;cursor:pointer;transition:all .2s}
+.lessonbtn:hover,.lessonbtn.active{background:rgba(40,100,200,.6);border-color:#4af;color:#fff}
+#togglepanel{position:absolute;right:300px;top:50%;transform:translateY(-50%);width:24px;height:50px;background:rgba(0,30,70,.8);border:1px solid rgba(100,180,255,.25);border-right:none;border-radius:8px 0 0 8px;display:flex;align-items:center;justify-content:center;cursor:pointer;pointer-events:all;font-size:16px;color:#4af;transition:right .3s}
+#togglepanel.shifted{right:0}
+#loadscreen{position:absolute;top:0;left:0;right:0;bottom:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100}
+#loadscreen h1{font-size:42px;font-weight:700;letter-spacing:6px;color:#fff;margin-bottom:8px}
+#loadscreen h1 span{color:#4af}
+#loadscreen p{color:#456;letter-spacing:2px;margin-bottom:30px;font-size:14px}
+#loadbar{width:300px;height:2px;background:rgba(100,180,255,.2);border-radius:1px;overflow:hidden}
+#loadfill{height:100%;background:#4af;width:0;transition:width .4s}
+</style>
+</head>
+<body>
+<div id="loadscreen">
+  <h1>Black<span>HoleX</span></h1>
+  <p>INTERACTIVE COSMIC PHYSICS SIMULATOR</p>
+  <div id="loadbar"><div id="loadfill"></div></div>
+</div>
+
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="topbar">
+    <div id="logo">Black<span>HoleX</span></div>
+    <div id="modetabs">
+      <div class="tab active" data-mode="sim">Simulator</div>
+      <div class="tab" data-mode="stellar">Stellar Evolution</div>
+      <div class="tab" data-mode="theory">Theory Lab</div>
+      <div class="tab" data-mode="learn">Learn</div>
+    </div>
+    <div style="font-size:11px;color:#456">WebGL · Real-time Physics</div>
+  </div>
+
+  <div id="panel">
+    <div class="panel-section">
+      <div class="panel-title">Black Hole Parameters</div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Mass (M☉)</span><span class="slider-val" id="v-mass">10</span></div>
+        <input type="range" id="s-mass" min="1" max="1000" value="10" step="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Spin (a/M)</span><span class="slider-val" id="v-spin">0.50</span></div>
+        <input type="range" id="s-spin" min="0" max="99" value="50" step="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Accretion Rate</span><span class="slider-val" id="v-accretion">0.60</span></div>
+        <input type="range" id="s-accretion" min="0" max="100" value="60" step="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Jet Power</span><span class="slider-val" id="v-jet">0.40</span></div>
+        <input type="range" id="s-jet" min="0" max="100" value="40" step="1">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label"><span>Sim Speed</span><span class="slider-val" id="v-speed">1.0x</span></div>
+        <input type="range" id="s-speed" min="1" max="50" value="10" step="1">
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Presets</div>
+      <div class="preset-grid">
+        <div class="preset" data-preset="stellar">Stellar BH<br><small>10 M☉</small></div>
+        <div class="preset" data-preset="smbh">Supermassive<br><small>10⁹ M☉</small></div>
+        <div class="preset" data-preset="sagA">Sagittarius A*<br><small>4M × 10⁶</small></div>
+        <div class="preset" data-preset="quasar">Quasar Core<br><small>Max spin</small></div>
+        <div class="preset" data-preset="spaghetti">Spaghettification<br><small>Demo</small></div>
+        <div class="preset" data-preset="hawking">Hawking Rad.<br><small>Tiny BH</small></div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Visual Effects</div>
+      <button class="btn active" id="tog-lensing">● Gravitational Lensing</button>
+      <button class="btn active" id="tog-disk">● Accretion Disk</button>
+      <button class="btn active" id="tog-jets">● Relativistic Jets</button>
+      <button class="btn" id="tog-hawking">○ Hawking Radiation</button>
+      <button class="btn" id="tog-spagh">○ Spaghettification</button>
+      <button class="btn" id="tog-photon">○ Photon Ring Detail</button>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">Physics Data</div>
+      <div class="info-metric"><span class="info-key">Schwarzschild Radius</span><span class="info-val" id="d-rs">29.5 km</span></div>
+      <div class="info-metric"><span class="info-key">Event Horizon Temp</span><span class="info-val" id="d-temp">6.2 nK</span></div>
+      <div class="info-metric"><span class="info-key">Time Dilation (1R)</span><span class="info-val" id="d-td">∞</span></div>
+      <div class="info-metric"><span class="info-key">Escape Vel. (1.5R)</span><span class="info-val" id="d-ev">0.816c</span></div>
+      <div class="info-metric"><span class="info-key">ISCO (Kerr)</span><span class="info-val" id="d-isco">3R</span></div>
+      <div class="info-metric"><span class="info-key">Tidal Force (1.5R)</span><span class="info-val" id="d-tidal">4.2×10¹² g</span></div>
+    </div>
+  </div>
+
+  <div id="togglepanel" title="Toggle panel">‹</div>
+
+  <div id="infopanel">
+    <div style="font-size:11px;color:#4af;letter-spacing:1px;margin-bottom:8px">LIVE TELEMETRY</div>
+    <div class="info-metric"><span class="info-key">Mass</span><span class="info-val" id="t-mass">10 M☉</span></div>
+    <div class="info-metric"><span class="info-key">Spin</span><span class="info-val" id="t-spin">a = 0.50</span></div>
+    <div class="info-metric"><span class="info-key">Rs</span><span class="info-val" id="t-rs">29.5 km</span></div>
+    <div class="info-metric"><span class="info-key">Luminosity</span><span class="info-val" id="t-lum">3.8×10³⁶ W</span></div>
+  </div>
+
+  <div id="theorylab">
+    <div id="theorycards">
+      <div class="tcard" data-theory="hawking">
+        <div class="tcard-title">Hawking Radiation</div>
+        <div class="tcard-tag tag-confirmed">Strongly Supported</div>
+        <div class="tcard-desc">Quantum vacuum fluctuations at the event horizon cause particle-antiparticle pair production. The BH slowly evaporates.</div>
+      </div>
+      <div class="tcard" data-theory="info">
+        <div class="tcard-title">Information Paradox</div>
+        <div class="tcard-tag tag-unresolved">Unresolved</div>
+        <div class="tcard-desc">Does matter crossing the horizon destroy quantum information? GR says yes, QM says no. The central unsolved puzzle.</div>
+      </div>
+      <div class="tcard" data-theory="firewall">
+        <div class="tcard-title">Firewall Hypothesis</div>
+        <div class="tcard-tag tag-speculative">Speculative</div>
+        <div class="tcard-desc">Proposes infalling observers hit a wall of high-energy radiation at the horizon, violating equivalence principle.</div>
+      </div>
+      <div class="tcard" data-theory="holographic">
+        <div class="tcard-title">Holographic Principle</div>
+        <div class="tcard-tag tag-speculative">Speculative</div>
+        <div class="tcard-desc">All information inside is encoded on the 2D event horizon surface — the universe may be a hologram.</div>
+      </div>
+      <div class="tcard" data-theory="wormhole">
+        <div class="tcard-title">Wormholes (ER=EPR)</div>
+        <div class="tcard-tag tag-speculative">Speculative</div>
+        <div class="tcard-desc">Entangled black holes may be connected by Einstein-Rosen bridges (wormholes) — space-time tunnels.</div>
+      </div>
+      <div class="tcard" data-theory="singularity">
+        <div class="tcard-title">Singularity Breakdown</div>
+        <div class="tcard-tag tag-speculative">Speculative</div>
+        <div class="tcard-desc">Quantum gravity may resolve the infinite density singularity into a Planck Star or string-theory Fuzzball.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="learnmode">
+    <div class="lesson">
+      <h2>Black Hole Learning Center</h2>
+      <div class="lessonlist" id="lessonlist"></div>
+      <div id="lessoncontent" style="margin-top:24px"></div>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const G=6.674e-11,c_=3e8,Msun=2e30,PI=Math.PI;
+let params={mass:10,spin:0.5,accretion:0.6,jet:0.4,speed:1,lensing:true,disk:true,jets:true,hawking:false,spagh:false,photon:false};
+let mode='sim',stellarStage=0,stellarT=0,theoryActive=null;
+let t=0,frame=0;
+let panelVisible=true;
+
+// THREE.JS SETUP
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.2;
+
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,0.01,10000);
+camera.position.set(0,2,6);
+
+// Orbit controls
+let isDragging=false,lastX=0,lastY=0,camTheta=0,camPhi=0.3,camR=6;
+canvas.addEventListener('mousedown',e=>{isDragging=true;lastX=e.clientX;lastY=e.clientY});
+window.addEventListener('mouseup',()=>isDragging=false);
+canvas.addEventListener('mousemove',e=>{
+  if(!isDragging)return;
+  camTheta-=(e.clientX-lastX)*0.005;
+  camPhi=Math.max(0.1,Math.min(1.4,camPhi-(e.clientY-lastY)*0.005));
+  lastX=e.clientX;lastY=e.clientY;
+});
+canvas.addEventListener('wheel',e=>{camR=Math.max(2,Math.min(20,camR+e.deltaY*0.01))});
+
+// STARFIELD
+function makeStarfield(){
+  const geo=new THREE.BufferGeometry();
+  const n=3000;
+  const pos=new Float32Array(n*3),col=new Float32Array(n*3);
+  for(let i=0;i<n;i++){
+    const r=80+Math.random()*200;
+    const th=Math.random()*PI*2,ph=Math.acos(2*Math.random()-1);
+    pos[i*3]=r*Math.sin(ph)*Math.cos(th);
+    pos[i*3+1]=r*Math.sin(ph)*Math.sin(th);
+    pos[i*3+2]=r*Math.cos(ph);
+    const bright=0.4+Math.random()*0.6;
+    const colorType=Math.random();
+    if(colorType<0.3){col[i*3]=bright*0.7;col[i*3+1]=bright*0.8;col[i*3+2]=bright;}
+    else if(colorType<0.6){col[i*3]=bright;col[i*3+1]=bright;col[i*3+2]=bright;}
+    else{col[i*3]=bright;col[i*3+1]=bright*0.85;col[i*3+2]=bright*0.6;}
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(col,3));
+  const mat=new THREE.PointsMaterial({size:0.15,vertexColors:true,sizeAttenuation:true});
+  return new THREE.Points(geo,mat);
+}
+scene.add(makeStarfield());
+
+// BLACK HOLE EVENT HORIZON (custom shader)
+const bhVS=`
+varying vec2 vUv;
+void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}
+`;
+const bhFS=`
+uniform float uTime;
+uniform float uSpin;
+uniform float uMass;
+varying vec2 vUv;
+vec3 hsv(float h,float s,float v){vec4 K=vec4(1.,2./3.,1./3.,3.);vec3 p=abs(fract(vec3(h)+K.xyz)*6.-K.www);return v*mix(K.xxx,clamp(p-K.xxx,0.,1.),s);}
+void main(){
+  vec2 uv=vUv*2.-1.;
+  float r=length(uv);
+  if(r>1.){discard;}
+  float rim=smoothstep(1.,0.92,r);
+  float glow=smoothstep(0.95,0.5,r)*0.3;
+  float photon=smoothstep(0.88,0.84,r)*smoothstep(0.82,0.86,r)*2.;
+  float spinOff=uSpin*uv.x*0.3;
+  float angle=atan(uv.y,uv.x+spinOff);
+  float swirl=sin(angle*3.+uTime*0.5)*0.08;
+  vec3 rimCol=mix(vec3(0.2,0.6,1.),vec3(1.,0.4,0.1),smoothstep(0.,1.,abs(uv.x)));
+  vec3 photonCol=vec3(0.9,0.7,0.3);
+  vec3 col=rimCol*rim+photonCol*photon+vec3(0.1,0.4,0.8)*glow;
+  float alpha=rim+glow+photon*0.8;
+  gl_FragColor=vec4(col,clamp(alpha,0.,1.));
+}
+`;
+const bhMat=new THREE.ShaderMaterial({vertexShader:bhVS,fragmentShader:bhFS,uniforms:{uTime:{value:0},uSpin:{value:0.5},uMass:{value:10}},transparent:true,depthWrite:false,side:THREE.FrontSide});
+
+const bhGeo=new THREE.SphereGeometry(1,64,64);
+const bhMesh=new THREE.Mesh(bhGeo,bhMat);
+scene.add(bhMesh);
+
+// BLACK HOLE CORE (solid black)
+const coreMat=new THREE.MeshBasicMaterial({color:0x000000});
+const coreMesh=new THREE.Mesh(new THREE.SphereGeometry(0.85,32,32),coreMat);
+scene.add(coreMesh);
+
+// LENSING / DISTORTION RING
+const lensVS=`
+varying vec2 vUv;
+varying vec3 vPos;
+void main(){vUv=uv;vPos=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}
+`;
+const lensFS=`
+uniform float uTime;
+uniform float uSpin;
+varying vec2 vUv;
+void main(){
+  vec2 uv=vUv*2.-1.;
+  float r=length(uv);
+  float ring=smoothstep(0.18,0.,abs(r-1.0));
+  float ring2=smoothstep(0.12,0.,abs(r-1.25))*0.4;
+  float ring3=smoothstep(0.08,0.,abs(r-1.5))*0.15;
+  float spinPh=uSpin*(atan(uv.y,uv.x)+uTime*0.2);
+  float flash=0.5+0.5*sin(spinPh*4.);
+  vec3 col=vec3(0.3,0.7,1.)*ring*mix(0.4,1.,flash)+vec3(0.5,0.8,1.)*ring2+vec3(0.6,0.9,1.)*ring3;
+  float alpha=(ring+ring2+ring3)*0.85;
+  gl_FragColor=vec4(col,alpha);
+}
+`;
+const lensMat=new THREE.ShaderMaterial({vertexShader:lensVS,fragmentShader:lensFS,uniforms:{uTime:{value:0},uSpin:{value:0.5}},transparent:true,depthWrite:false,side:THREE.DoubleSide});
+const lensGeo=new THREE.PlaneGeometry(4,4,1,1);
+const lensMesh=new THREE.Mesh(lensGeo,lensMat);
+lensMesh.rotation.x=Math.PI/2;
+scene.add(lensMesh);
+
+// ACCRETION DISK
+const diskVS=`
+varying vec2 vUv;
+varying vec3 vWorldPos;
+void main(){vUv=uv;vWorldPos=(modelMatrix*vec4(position,1.)).xyz;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}
+`;
+const diskFS=`
+uniform float uTime;
+uniform float uSpin;
+uniform float uAccretion;
+varying vec2 vUv;
+varying vec3 vWorldPos;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p);vec2 f=fract(p);f=f*f*(3.-2.*f);float a=hash(i),b=hash(i+vec2(1,0)),c=hash(i+vec2(0,1)),d=hash(i+vec2(1,1));return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}
+void main(){
+  vec2 uv=vUv*2.-1.;
+  float r=length(uv);
+  if(r<0.35||r>1.0){discard;}
+  float angle=atan(uv.y,uv.x);
+  float kepler=1./sqrt(r);
+  float phase=angle+kepler*uTime*0.4;
+  float turb=noise(vec2(r*8.,phase*2.+uTime*0.1))*0.5+noise(vec2(r*16.,phase*4.+uTime*0.2))*0.25;
+  // Doppler beaming: near side brighter
+  float doppler=0.5+0.5*sin(angle+uTime*0.3);
+  float temp=1./(r*r);
+  float bright=uAccretion*turb*temp*(0.6+0.4*doppler);
+  float outerFade=smoothstep(1.,0.5,r);
+  float innerFade=smoothstep(0.35,0.5,r);
+  float alpha=bright*outerFade*innerFade;
+  // Color: inner hot (blue-white), outer cool (orange-red)
+  vec3 hotCol=vec3(1.,0.95,0.8);
+  vec3 warmCol=vec3(1.,0.5,0.1);
+  vec3 coolCol=vec3(0.6,0.1,0.05);
+  float heat=smoothstep(0.7,0.35,r);
+  vec3 col=mix(coolCol,mix(warmCol,hotCol,heat),smoothstep(0.5,0.4,r));
+  col*=bright*2.;
+  gl_FragColor=vec4(col,clamp(alpha*1.5,0.,0.95));
+}
+`;
+const diskMat=new THREE.ShaderMaterial({vertexShader:diskVS,fragmentShader:diskFS,uniforms:{uTime:{value:0},uSpin:{value:0.5},uAccretion:{value:0.6}},transparent:true,depthWrite:false,side:THREE.DoubleSide});
+const diskGeo=new THREE.PlaneGeometry(3.2,3.2,64,64);
+const diskMesh=new THREE.Mesh(diskGeo,diskMat);
+diskMesh.rotation.x=Math.PI/2;
+scene.add(diskMesh);
+
+// JETS (particle systems)
+function makeJet(dir){
+  const n=800;
+  const geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(n*3);
+  const vel=new Float32Array(n*3);
+  const life=new Float32Array(n);
+  for(let i=0;i<n;i++){
+    life[i]=Math.random();
+    const spread=0.06*Math.random();
+    const ang=Math.random()*PI*2;
+    pos[i*3]=Math.cos(ang)*spread;
+    pos[i*3+1]=dir*life[i]*8;
+    pos[i*3+2]=Math.sin(ang)*spread;
+    vel[i*3]=Math.cos(ang)*0.001;
+    vel[i*3+1]=dir*0.08;
+    vel[i*3+2]=Math.sin(ang)*0.001;
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('aLife',new THREE.BufferAttribute(life,1));
+  const mat=new THREE.PointsMaterial({size:0.06,color:dir>0?0x4499ff:0x44aaff,transparent:true,opacity:0.7,depthWrite:false,blending:THREE.AdditiveBlending});
+  return {pts:new THREE.Points(geo,mat),pos,vel,life,n,dir};
+}
+const jet1=makeJet(1),jet2=makeJet(-1);
+scene.add(jet1.pts);scene.add(jet2.pts);
+
+function updateJet(jet){
+  const speed=params.speed*0.016*params.jet;
+  for(let i=0;i<jet.n;i++){
+    jet.life[i]+=speed*(0.5+0.5*Math.random()*0.1);
+    if(jet.life[i]>1){
+      jet.life[i]=0;
+      const spread=0.04;
+      const ang=Math.random()*PI*2;
+      jet.pos[i*3]=Math.cos(ang)*spread;
+      jet.pos[i*3+1]=jet.dir*0.1;
+      jet.pos[i*3+2]=Math.sin(ang)*spread;
+    }else{
+      const l=jet.life[i];
+      const spread=0.04+l*0.15;
+      const ang=Math.atan2(jet.pos[i*3+2],jet.pos[i*3])+0.002;
+      jet.pos[i*3]=Math.cos(ang)*spread*l;
+      jet.pos[i*3+1]=jet.dir*l*7;
+      jet.pos[i*3+2]=Math.sin(ang)*spread*l;
+    }
+  }
+  jet.pts.geometry.attributes.position.needsUpdate=true;
+  jet.pts.geometry.attributes.aLife.needsUpdate=true;
+  jet.pts.material.opacity=0.4+params.jet*0.5;
+}
+
+// HAWKING RADIATION PARTICLES
+const hawkN=200;
+const hawkGeo=new THREE.BufferGeometry();
+const hawkPos=new Float32Array(hawkN*3);
+const hawkCol=new Float32Array(hawkN*3);
+const hawkLife=new Float32Array(hawkN);
+for(let i=0;i<hawkN;i++)hawkLife[i]=Math.random();
+hawkGeo.setAttribute('position',new THREE.BufferAttribute(hawkPos,3));
+hawkGeo.setAttribute('color',new THREE.BufferAttribute(hawkCol,3));
+const hawkMat=new THREE.PointsMaterial({size:0.05,vertexColors:true,transparent:true,opacity:0.8,depthWrite:false,blending:THREE.AdditiveBlending});
+const hawkPts=new THREE.Points(hawkGeo,hawkMat);
+hawkPts.visible=false;
+scene.add(hawkPts);
+
+function updateHawking(){
+  for(let i=0;i<hawkN;i++){
+    hawkLife[i]+=0.01;
+    if(hawkLife[i]>1){
+      hawkLife[i]=0;
+      const th=Math.random()*PI*2,ph=Math.acos(2*Math.random()-1);
+      const r=1.05;
+      hawkPos[i*3]=r*Math.sin(ph)*Math.cos(th);
+      hawkPos[i*3+1]=r*Math.sin(ph)*Math.sin(th);
+      hawkPos[i*3+2]=r*Math.cos(ph);
+    }else{
+      const l=hawkLife[i];
+      const r=1.05+l*3;
+      const th=Math.atan2(hawkPos[i*3+1],hawkPos[i*3])+0.01;
+      const ph=Math.acos(hawkPos[i*3+2]/(length3(i)+0.001));
+      hawkPos[i*3]*=1.04;
+      hawkPos[i*3+1]*=1.04;
+      hawkPos[i*3+2]*=1.04;
+      const heat=1-l;
+      hawkCol[i*3]=1;hawkCol[i*3+1]=heat*0.5;hawkCol[i*3+2]=heat*0.2;
+    }
+  }
+  hawkGeo.attributes.position.needsUpdate=true;
+  hawkGeo.attributes.color.needsUpdate=true;
+}
+function length3(i){return Math.sqrt(hawkPos[i*3]**2+hawkPos[i*3+1]**2+hawkPos[i*3+2]**2);}
+
+// SPAGHETTIFICATION
+const spagN=120;
+const spagGeo=new THREE.BufferGeometry();
+const spagPos=new Float32Array(spagN*3);
+const spagLife=new Float32Array(spagN);
+for(let i=0;i<spagN;i++){
+  spagLife[i]=Math.random();
+  spagPos[i*3]=2+Math.random()*1.5;
+  spagPos[i*3+1]=(Math.random()-0.5)*0.5;
+  spagPos[i*3+2]=(Math.random()-0.5)*0.5;
+}
+spagGeo.setAttribute('position',new THREE.BufferAttribute(spagPos,3));
+const spagMat=new THREE.PointsMaterial({size:0.04,color:0xff8833,transparent:true,opacity:0.8,depthWrite:false,blending:THREE.AdditiveBlending});
+const spagPts=new THREE.Points(spagGeo,spagMat);
+spagPts.visible=false;
+scene.add(spagPts);
+
+function updateSpaghetti(){
+  for(let i=0;i<spagN;i++){
+    const r=Math.sqrt(spagPos[i*3]**2+spagPos[i*3+1]**2);
+    const pull=0.002/(r*r+0.01);
+    spagPos[i*3]-=pull*spagPos[i*3]*3;
+    spagPos[i*3+1]+=(Math.random()-0.5)*0.003;
+    spagPos[i*3+2]+=(Math.random()-0.5)*0.003;
+    if(r<0.9||r>4){
+      spagPos[i*3]=2.5+Math.random();
+      spagPos[i*3+1]=(Math.random()-0.5)*0.3;
+      spagPos[i*3+2]=(Math.random()-0.5)*0.3;
+    }
+  }
+  spagGeo.attributes.position.needsUpdate=true;
+}
+
+// STELLAR EVOLUTION visuals
+const stellarSphere=new THREE.Mesh(new THREE.SphereGeometry(1,32,32),new THREE.MeshPhongMaterial({color:0xffaa33,emissive:0xff6600,emissiveIntensity:0.5}));
+stellarSphere.visible=false;
+scene.add(stellarSphere);
+
+// Ambient + point light
+scene.add(new THREE.AmbientLight(0x111133,1));
+const pLight=new THREE.PointLight(0xffffff,0,0);
+scene.add(pLight);
+
+// Glow light around BH
+const bhLight=new THREE.PointLight(0x2266ff,1.5,8);
+scene.add(bhLight);
+
+// PHYSICS CALCULATIONS
+function calcSchwarzschildRadius(Msolar){return (2*G*Msolar*Msun)/(c_*c_)/1000;}// km
+function calcHawkingTemp(Msolar){const hbar=1.055e-34,kb=1.38e-23;return (hbar*c_*c_*c_)/(8*PI*G*Msolar*Msun*kb);}
+function calcISCO(a){// innermost stable circular orbit for Kerr
+  const Z1=1+Math.cbrt(1-a*a)*(Math.cbrt(1+a)+Math.cbrt(1-a));
+  const Z2=Math.sqrt(3*a*a+Z1*Z1);
+  return 3+Z2-Math.sign(a)*Math.sqrt((3-Z1)*(3+Z1+2*Z2));
+}
+
+function updatePhysicsDisplay(){
+  const M=params.mass;
+  const a=params.spin;
+  const Rs=calcSchwarzschildRadius(M);
+  const Th=calcHawkingTemp(M);
+  const isco=calcISCO(a);
+  document.getElementById('v-mass').textContent=M;
+  document.getElementById('v-spin').textContent=a.toFixed(2);
+  document.getElementById('v-accretion').textContent=params.accretion.toFixed(2);
+  document.getElementById('v-jet').textContent=params.jet.toFixed(2);
+  document.getElementById('v-speed').textContent=params.speed.toFixed(1)+'x';
+  document.getElementById('d-rs').textContent=Rs<1?`${(Rs*1000).toFixed(1)} m`:`${Rs.toFixed(1)} km`;
+  document.getElementById('d-temp').textContent=Th>1e6?`${(Th/1e9).toFixed(2)} GK`:Th>1?`${Th.toFixed(1)} K`:`${(Th*1e9).toFixed(2)} nK`;
+  document.getElementById('d-td').textContent='→ ∞ at Rs';
+  document.getElementById('d-ev').textContent='0.816c';
+  document.getElementById('d-isco').textContent=`${isco.toFixed(1)} Rs`;
+  document.getElementById('d-tidal').textContent=M<100?`${(M*4.2e11).toExponential(1)} g`:`${(M*4.2e9).toExponential(1)} g`;
+  document.getElementById('t-mass').textContent=M<1e6?`${M} M☉`:`${(M/1e6).toFixed(1)}×10⁶ M☉`;
+  document.getElementById('t-spin').textContent=`a = ${a.toFixed(2)}`;
+  document.getElementById('t-rs').textContent=Rs<1?`${(Rs*1000).toFixed(1)} m`:`${Rs.toFixed(1)} km`;
+  const lum=(params.accretion*(M/10)*3.8e33);
+  document.getElementById('t-lum').textContent=`${lum.toExponential(2)} W`;
+}
+
+// PRESETS
+const presets={
+  stellar:{mass:10,spin:0.5,accretion:0.6,jet:0.4},
+  smbh:{mass:1e9,spin:0.7,accretion:0.8,jet:0.7},
+  sagA:{mass:4e6,spin:0.6,accretion:0.4,jet:0.3},
+  quasar:{mass:1e8,spin:0.99,accretion:1.0,jet:1.0},
+  spaghetti:{mass:100,spin:0.3,accretion:0.3,jet:0.1},
+  hawking:{mass:0.1,spin:0,accretion:0,jet:0}
+};
+document.querySelectorAll('.preset').forEach(el=>{
+  el.addEventListener('click',()=>{
+    const p=presets[el.dataset.preset];
+    if(!p)return;
+    Object.assign(params,p);
+    document.getElementById('s-mass').value=Math.min(p.mass,1000);
+    document.getElementById('s-spin').value=p.spin*100;
+    document.getElementById('s-accretion').value=p.accretion*100;
+    document.getElementById('s-jet').value=p.jet*100;
+    if(el.dataset.preset==='spaghetti'){params.spagh=true;document.getElementById('tog-spagh').classList.add('active');document.getElementById('tog-spagh').textContent='● Spaghettification';}
+    if(el.dataset.preset==='hawking'){params.hawking=true;document.getElementById('tog-hawking').classList.add('active');document.getElementById('tog-hawking').textContent='● Hawking Radiation';}
+    updatePhysicsDisplay();
+  });
+});
+
+// SLIDERS
+function bindSlider(id,key,transform){
+  const el=document.getElementById(id);
+  el.addEventListener('input',()=>{params[key]=transform(+el.value);updatePhysicsDisplay();});
+}
+bindSlider('s-mass','mass',v=>v);
+bindSlider('s-spin','spin',v=>v/100);
+bindSlider('s-accretion','accretion',v=>v/100);
+bindSlider('s-jet','jet',v=>v/100);
+bindSlider('s-speed','speed',v=>v/10);
+
+// TOGGLES
+function bindToggle(id,key){
+  const el=document.getElementById(id);
+  el.addEventListener('click',()=>{
+    params[key]=!params[key];
+    el.classList.toggle('active',params[key]);
+    el.textContent=(params[key]?'● ':'○ ')+el.textContent.slice(2);
+  });
+}
+bindToggle('tog-lensing','lensing');
+bindToggle('tog-disk','disk');
+bindToggle('tog-jets','jets');
+bindToggle('tog-hawking','hawking');
+bindToggle('tog-spagh','spagh');
+bindToggle('tog-photon','photon');
+
+// MODE TABS
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    mode=tab.dataset.mode;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('theorylab').classList.toggle('visible',mode==='theory');
+    document.getElementById('learnmode').classList.toggle('visible',mode==='learn');
+    stellarSphere.visible=mode==='stellar';
+    bhMesh.visible=mode!=='stellar'||stellarStage>5;
+    coreMesh.visible=mode!=='stellar'||stellarStage>5;
+    diskMesh.visible=params.disk&&mode!=='stellar';
+    if(mode==='stellar')initStellar();
+    if(mode==='learn')initLearn();
+  });
+});
+
+// THEORY CARDS
+document.querySelectorAll('.tcard').forEach(card=>{
+  card.addEventListener('click',()=>{
+    const wasActive=card.classList.contains('active');
+    document.querySelectorAll('.tcard').forEach(c=>c.classList.remove('active'));
+    if(!wasActive){card.classList.add('active');theoryActive=card.dataset.theory;}
+    else theoryActive=null;
+  });
+});
+
+// STELLAR EVOLUTION
+const stellarStages=[
+  {name:'Nebula',color:0x334488,size:3,emissive:0x112244,emissiveI:0.3,desc:'A vast cloud of gas and dust, the birthplace of stars.'},
+  {name:'Protostar',color:0xaa4422,size:1.5,emissive:0x882200,emissiveI:0.6,desc:'Gravity collapses the nebula. Core heats up. Not yet fusing hydrogen.'},
+  {name:'Main Sequence',color:0xffcc44,size:1.2,emissive:0xff8800,emissiveI:0.8,desc:'Hydrogen fusion begins. Stable for millions to billions of years.'},
+  {name:'Red Supergiant',color:0xff3300,size:2.5,emissive:0xcc2200,emissiveI:0.6,desc:'Star expands enormously as core hydrogen depletes. Up to 1500× solar radius.'},
+  {name:'Supernova',color:0xffffff,size:4,emissive:0xffaa00,emissiveI:2.0,desc:'Catastrophic core collapse. Outshines entire galaxy for weeks!'},
+  {name:'Neutron Star',color:0x8888ff,size:0.15,emissive:0x4444ff,emissiveI:1.5,desc:'Ultra-dense remnant. 1.4 M☉ compressed into ~10 km radius.'},
+  {name:'Black Hole',color:0x000000,size:0.5,emissive:0x001133,emissiveI:0.1,desc:'If core mass > 3 M☉, collapse continues past neutron star to a black hole.'}
+];
+let stellarInterval=null;
+let stellarStageIdx=0;
+
+function initStellar(){
+  stellarStageIdx=0;
+  showStellarStage(0);
+  if(stellarInterval)clearInterval(stellarInterval);
+  stellarInterval=setInterval(()=>{
+    stellarStageIdx=(stellarStageIdx+1)%stellarStages.length;
+    showStellarStage(stellarStageIdx);
+  },3000);
+}
+
+function showStellarStage(idx){
+  const s=stellarStages[idx];
+  stellarSphere.visible=true;
+  stellarSphere.material.color.setHex(s.color);
+  stellarSphere.material.emissive.setHex(s.emissive);
+  stellarSphere.material.emissiveIntensity=s.emissiveI;
+  stellarSphere.scale.setScalar(s.size);
+  bhMesh.visible=idx>=6;
+  coreMesh.visible=idx>=6;
+  document.getElementById('t-mass').textContent=s.name;
+  document.getElementById('t-spin').textContent=s.desc;
+}
+
+// PANEL TOGGLE
+document.getElementById('togglepanel').addEventListener('click',()=>{
+  panelVisible=!panelVisible;
+  document.getElementById('panel').classList.toggle('hidden',!panelVisible);
+  const tog=document.getElementById('togglepanel');
+  tog.classList.toggle('shifted',!panelVisible);
+  tog.style.right=panelVisible?'300px':'0px';
+  tog.textContent=panelVisible?'›':'‹';
+});
+
+// LEARNING MODE
+const lessons=[
+  {id:'what',title:'What is a Black Hole?',content:`<h2>What is a Black Hole?</h2><p>A black hole is a region of spacetime where gravity is so strong that nothing — not even light — can escape from it. The boundary of no return is called the <strong>event horizon</strong>.</p><div class="highlight">Einstein's General Relativity predicts that when enough mass is concentrated in a small enough volume, spacetime curves so severely that it closes in on itself.</div><p>Black holes are not "cosmic vacuum cleaners" — from a safe distance, a black hole with the Sun's mass would have the exact same gravitational pull as the Sun. The extreme effects only appear near the event horizon.</p>`},
+  {id:'form',title:'How Does One Form?',content:`<h2>How Does a Black Hole Form?</h2><p>Most stellar black holes form when a <strong>massive star</strong> (greater than ~20 solar masses) exhausts its nuclear fuel and undergoes a <strong>core collapse supernova</strong>. The core collapses so fast that nothing can halt it — not electron pressure, not neutron degeneracy pressure — and a black hole forms.</p><div class="highlight">Schwarzschild Radius: Rs = 2GM/c²<br>For our Sun: Rs ≈ 3 km. The Sun would need to be compressed to 3 km to become a black hole.</div><p>Supermassive black holes (millions to billions of solar masses) at galactic centers likely formed through mergers and rapid accretion in the early universe.</p>`},
+  {id:'horizon',title:'What is the Event Horizon?',content:`<h2>The Event Horizon</h2><p>The event horizon is the mathematical boundary — not a physical surface — where escape velocity equals the speed of light. Cross inward, and you can never return, even if you're traveling at c.</p><p>A distant observer would see an infalling object slow down and redshift, appearing to "freeze" at the horizon. The infaller, however, crosses it in finite proper time — nothing locally special happens (for large BHs).</p><div class="highlight">Time dilation at distance r: t'/t = 1/√(1 - Rs/r) → ∞ as r → Rs</div>`},
+  {id:'hawking',title:'Hawking Radiation',content:`<h2>Hawking Radiation</h2><p>In 1974, Stephen Hawking showed that quantum mechanics causes black holes to slowly emit thermal radiation. Virtual particle-antiparticle pairs at the horizon can split — one falls in (negative energy), one escapes — causing the black hole to lose mass.</p><div class="highlight">Temperature: T = ħc³/(8πGMkB)<br>A 10 solar mass BH has T ≈ 6 nanoKelvin — far colder than cosmic microwave background.</div><p>Hawking radiation is too faint to detect for stellar black holes, but it means black holes eventually evaporate — for a 10 M☉ BH, this takes ~10⁷⁴ years.</p>`},
+  {id:'spaghetti',title:'Spaghettification',content:`<h2>Spaghettification</h2><p>As you approach a black hole, the tidal difference in gravity between your head and feet becomes enormous. This stretches you radially and compresses you laterally — like spaghetti.</p><p>For stellar black holes, this happens <em>outside</em> the event horizon. For supermassive black holes (like Sgr A*), the tidal force at the horizon is gentler — you'd cross it without immediately feeling anything extreme.</p><div class="highlight">Tidal force ∝ M/r³ — it increases with mass but decreases sharply with distance.</div>`},
+  {id:'types',title:'Types of Black Holes',content:`<h2>Types of Black Holes</h2><p><strong>Stellar Black Holes:</strong> 3–100 M☉. Formed from stellar collapse. Common throughout galaxies.</p><p><strong>Intermediate-Mass:</strong> 100–100,000 M☉. Evidence mounting from gravitational wave detections. May form in dense star clusters.</p><p><strong>Supermassive:</strong> 10⁶–10¹⁰ M☉. Found at the centers of virtually all large galaxies. Sagittarius A* (our galactic center) = 4 million M☉.</p><div class="highlight">The first image of a black hole was captured in 2019 — M87* at 6.5 billion M☉, 55 million light-years away.</div>`},
+];
+
+function initLearn(){
+  const list=document.getElementById('lessonlist');
+  list.innerHTML='';
+  lessons.forEach((l,i)=>{
+    const btn=document.createElement('div');
+    btn.className='lessonbtn';
+    btn.textContent=l.title;
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.lessonbtn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('lessoncontent').innerHTML=l.content;
+    });
+    list.appendChild(btn);
+  });
+  if(lessons.length>0){
+    document.getElementById('lessoncontent').innerHTML=lessons[0].content;
+    list.children[0].classList.add('active');
+  }
+}
+
+// MAIN RENDER LOOP
+function animate(){
+  requestAnimationFrame(animate);
+  if(mode==='learn')return;
+  t+=0.016*params.speed;
+  frame++;
+  
+  // Camera orbit
+  camera.position.x=camR*Math.sin(camPhi)*Math.sin(camTheta);
+  camera.position.y=camR*Math.cos(camPhi);
+  camera.position.z=camR*Math.sin(camPhi)*Math.cos(camTheta);
+  camera.lookAt(0,0,0);
+
+  // Update BH scale with mass
+  const scale=0.3+Math.log10(Math.max(params.mass,0.01))*0.25;
+  bhMesh.scale.setScalar(scale);
+  coreMesh.scale.setScalar(scale*0.85);
+  lensMesh.scale.setScalar(scale*1.6);
+  diskMesh.scale.setScalar(scale*1.4+(params.spin>0.7?0.2:0));
+
+  // Shader uniforms
+  bhMat.uniforms.uTime.value=t;
+  bhMat.uniforms.uSpin.value=params.spin;
+  bhMat.uniforms.uMass.value=params.mass;
+  lensMat.uniforms.uTime.value=t;
+  lensMat.uniforms.uSpin.value=params.spin;
+  diskMat.uniforms.uTime.value=t;
+  diskMat.uniforms.uSpin.value=params.spin;
+  diskMat.uniforms.uAccretion.value=params.accretion;
+
+  // Visibility
+  lensMesh.visible=params.lensing;
+  diskMesh.visible=params.disk&&mode!=='stellar';
+  jet1.pts.visible=params.jets&&mode!=='stellar';
+  jet2.pts.visible=params.jets&&mode!=='stellar';
+  hawkPts.visible=params.hawking;
+  spagPts.visible=params.spagh;
+
+  // BH rotation (frame dragging)
+  bhMesh.rotation.y=t*params.spin*0.3;
+  lensMesh.rotation.z=t*params.spin*0.05;
+
+  // Update particles
+  if(params.jets){updateJet(jet1);updateJet(jet2);}
+  if(params.hawking)updateHawking();
+  if(params.spagh)updateSpaghetti();
+
+  // BH glow based on accretion
+  bhLight.intensity=0.5+params.accretion*2;
+  bhLight.color.setHSL(0.6-params.accretion*0.2,1,0.5);
+
+  // Stellar mode
+  if(mode==='stellar'){
+    stellarSphere.rotation.y+=0.005;
+  }
+
+  // Theory mode extras
+  if(mode==='theory'&&theoryActive==='hawking'){
+    params.hawking=true;hawkPts.visible=true;
+  }
+
+  renderer.render(scene,camera);
+  if(frame%6===0)updatePhysicsDisplay();
+}
+
+// RESIZE
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+// LOAD SEQUENCE
+const fill=document.getElementById('loadfill');
+let loadP=0;
+const loadTimer=setInterval(()=>{
+  loadP+=12+Math.random()*15;
+  fill.style.width=Math.min(loadP,100)+'%';
+  if(loadP>=100){
+    clearInterval(loadTimer);
+    setTimeout(()=>{
+      document.getElementById('loadscreen').style.opacity='0';
+      document.getElementById('loadscreen').style.transition='opacity 0.8s';
+      setTimeout(()=>{document.getElementById('loadscreen').style.display='none';},800);
+    },400);
+  }
+},120);
+
+updatePhysicsDisplay();
+animate();
+</script>
+</body>
+</html>
